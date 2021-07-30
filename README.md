@@ -19,12 +19,4 @@ The training on bitwise operations and bitmasks was in the use of a single byte 
 
 The byte was structured as shown here:
 
-\------------------------------------------------------------------------- 
-
- |  WIN  | PAIR  | THREE | PRIME |       TRIES       |       STATE       | 
-
-\------------------------------------------------------------------------- 
-
- | 1 bit | 1 bit | 1 bit | 1 bit | TRIES_1 | TRIES_0 | STATE_1 | STATE_0 | 
-
-\------------------------------------------------------------------------- 
+<img src="images/bits.png">
