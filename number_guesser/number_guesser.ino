@@ -1,3 +1,13 @@
+/* 
+ * Written by Radhi SGHAIER: https://github.com/Rad-hi
+ * --------------------------------------------------------
+ * Do whatever you want with the code ...
+ * If this was ever useful to you, and we happened to meet on the street, 
+ * I'll appreciate a cup of dark coffee, no sugar please.
+ * --------------------------------------------------------
+ * Build an interactive number guessing game and learn bitwise operations
+ */
+
 #include "printables.h"
 
 // Bitmasks
@@ -17,6 +27,9 @@
 #define PRINT_TIME              20000UL  
 #define RESPONSE_TIMEOUT        10000UL             
 
+// Serial settings
+#define SER_MON_BAUD_RATE       115200     // bits/second (if on an Arduino, maybe try a smaller rate)
+
 // Func prototypes
 bool is_prime(uint8_t n);
 bool read_ser();
@@ -30,19 +43,20 @@ bool read_ser();
  | 1 bit | 1 bit | 1 bit | 1 bit | TRIES_1 | TRIES_0 | STATE_1 | STATE_0 | 
  ------------------------------------------------------------------------- 
 */
-uint8_t flag;                  // All our flags in one flag
+uint8_t flag;                  // All our flags in one flag (byte)
 uint8_t number;                // The number the player will be guessing
 unsigned long prev_time;
 
 char c;                        // Vars for reading from serial 
 char buf[5];
 uint8_t idx = 0;
+char print_buf[255];          // Serial printing buffer
 
 /************************************************************************/
 
 void setup() {
   // Set serial and give it time to start
-  Serial.begin(115200);
+  Serial.begin(SER_MON_BAUD_RATE);
   delay(1000);
   
   // Seed the random number generator
@@ -74,12 +88,14 @@ void loop() {
         prev_time = millis();
       }
 
+      // This is the same as:
+      // if((flag & HELP_BITMASK) == HELP_BITMASK)
       if((flag & (PAIR_BITMASK | PRIME_BITMASK | THREE_BITMASK)) == HELP_BITMASK){ // All help flags are set
         Serial.println("--- You've used all help available, which isn't permitted ---");
         flag = (flag & ~STATE_BITMASK) | PROMPT;
       }
       
-      if(read_ser()){
+      if(read_ser()){ // There's something on the serial port
         prev_time = millis();
 
         switch(buf[0]){
@@ -95,38 +111,42 @@ void loop() {
             uint8_t answer = strtol(s, NULL, 10);
             
             if(answer == number){ // Right answer
-              flag |= WIN_BITMASK;
+              flag |= WIN_BITMASK; // flag = flag | WIN_BITMASK;
               flag = (flag & ~STATE_BITMASK) | PROMPT;
               break;
             }
-            else{ // False answer
+            else{ // False answer 
               uint8_t tries = (flag & TRIES_BITMASK) >> 2;
-              Serial.printf("--- This is your %s attempt ! ---\n", count[tries]);
+              sprintf(print_buf, "--- This is your %s attempt ! ---\n", count[tries]);
+              Serial.print(print_buf);
               if(tries == 2) flag = (flag & ~STATE_BITMASK) | PROMPT;
-              else flag = (flag & ~TRIES_BITMASK) | ((tries + 1) << 2);
+              else flag = (flag & ~TRIES_BITMASK) | ((tries + 1) << 2); 
             }
             break;
           }
           
-          case 'p':{  
+          case 'p':{  // Is pair ?
             if(buf[1] == 'r'){
-              Serial.printf("--- The number is%s prime ! ---\n", is_prime(number) ? "" : " not");
+              sprintf(print_buf, "--- The number is%s prime ! ---\n", is_prime(number) ? "" : " not");
+              Serial.print(print_buf);
               flag |= PRIME_BITMASK;
             }
             else{
-              Serial.printf("--- The number is%s pair ! ---\n", number % 2 == 0 ? "" : " not");
+              sprintf(print_buf, "--- The number is%s pair ! ---\n", number % 2 == 0 ? "" : " not");
+              Serial.print(print_buf);
               flag |= PAIR_BITMASK;
             }
             break;
           }
           
-          case 't':{
-            Serial.printf("--- The number is%s a multiple of three ! ---\n", number % 3 == 0 ? "" : " not");
+          case 't':{ // Is multiple of three ?
+            sprintf(print_buf, "--- The number is%s a multiple of three ! ---\n", number % 3 == 0 ? "" : " not");
+            Serial.print(print_buf);
             flag |= THREE_BITMASK;
             break;
           }
           
-          case 'e':{
+          case 'e':{ // EXIT
             Serial.println("--- Game terminated ---");
             flag = (flag & ~STATE_BITMASK) | HALT;
             break;
@@ -148,7 +168,7 @@ void loop() {
       else Serial.println("--- You lost ! ---");
 
       Serial.println("--- Wanna retry ? ---");
-      Serial.println("Y/n ?");
+      Serial.println("--- Y/n ? ---");
 
       bool done = false;      
       unsigned long prev = millis();
@@ -161,26 +181,30 @@ void loop() {
         switch(buf[0]){
           case 'y':
           case 'Y':
-            Serial.printf("--- Your number was %d, restarting the game ! ---\n", number);
+            sprintf(print_buf, "--- Your number was %d, restarting the game ! ---\n", number);
+            Serial.print(print_buf);
             flag = (flag & ~STATE_BITMASK) | RESET;
             break;
 
           case 'n':
           case 'N':
-            Serial.printf("--- Your number was %d, terminating the game ! ---\n", number);
+            sprintf(print_buf, "--- Your number was %d, terminating the game ! ---\n", number);
+            Serial.print(print_buf);
             flag = (flag & ~STATE_BITMASK) | HALT;
             break;
 
           default: 
             Serial.println("--- Defaulted to NO ! ---");
-            Serial.printf("--- Your number was %d, terminating the game ! ---\n", number);
+            sprintf(print_buf, "--- Your number was %d, terminating the game ! ---\n", number);
+            Serial.print(print_buf);
             flag = (flag & ~STATE_BITMASK) | HALT;
             break;
         }
       }
-      else{
+      else{ // Timed out
         Serial.println("--- Defaulted to NO ! ---");
-        Serial.printf("--- Your number was %d, terminating the game ! ---\n", number);
+        sprintf(print_buf, "--- Your number was %d, terminating the game ! ---\n", number);
+        Serial.print(print_buf);
         flag = (flag & ~STATE_BITMASK) | HALT;
       }
       break;
