@@ -15,6 +15,12 @@ Here's a running demo of a gameplay:
 
 ---
 
+Watch the full tutorial on **Bitmask operations**, and the code walkthrough [here](https://youtu.be/MKuCq9c73Hg).
+
+<img src="images/thumbnail.png" width=640>
+
+---
+
 The training on bitwise operations and bitmasks was in the use of a single byte for handling all states and flags of the game.
 
 The byte was structured as shown here:
