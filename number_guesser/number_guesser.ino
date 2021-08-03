@@ -6,6 +6,8 @@
  * I'll appreciate a cup of dark coffee, no sugar please.
  * --------------------------------------------------------
  * Build an interactive number guessing game and learn bitwise operations
+ * -------------------------------------------------------- 
+ * Tutorial on YouTube: https://youtu.be/MKuCq9c73Hg
  */
 
 #include "printables.h"
